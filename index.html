@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>楚园运动康复处方生成器</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172b2a;
+      --muted: #62716e;
+      --line: #d8e3df;
+      --bg: #f4f8f6;
+      --panel: #fff;
+      --green: #2f7d65;
+      --green-dark: #215f4d;
+      --blue: #2e6fa2;
+      --amber: #b77521;
+      --red: #b74444;
+      --violet: #6454a3;
+      --shadow: 0 18px 46px rgba(22, 49, 45, .12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    button, input, select, textarea { font: inherit; }
+
+    .hero {
+      min-height: 38vh;
+      display: grid;
+      align-items: end;
+      color: #fff;
+      background:
+        linear-gradient(90deg, rgba(14, 37, 35, .88), rgba(14, 37, 35, .55) 52%, rgba(14, 37, 35, .12)),
+        url("assets/elder-rehab-hero.png") center / cover no-repeat;
+    }
+    .hero-inner {
+      width: min(1280px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 46px 0 28px;
+    }
+    .hero h1 {
+      margin: 0 0 10px;
+      max-width: 840px;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+    .hero p {
+      max-width: 820px;
+      margin: 0;
+      color: rgba(255,255,255,.88);
+      font-size: 18px;
+    }
+
+    .wrap {
+      width: min(1280px, calc(100% - 32px));
+      margin: 18px auto 46px;
+      display: grid;
+      grid-template-columns: 430px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    .form-panel {
+      padding: 18px;
+      position: sticky;
+      top: 14px;
+      max-height: calc(100vh - 28px);
+      overflow: auto;
+    }
+    .output-panel { padding: 18px; min-height: 720px; }
+    h2, h3 { letter-spacing: 0; }
+    h2 { margin: 0 0 14px; font-size: 22px; }
+    h3 { margin: 0 0 10px; font-size: 18px; }
+    .section-title {
+      margin: 22px 0 10px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: #24433f;
+      font-size: 16px;
+    }
+    .field { margin-bottom: 13px; }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #243f3b;
+    }
+    input, select, textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #cbd8d4;
+      border-radius: 6px;
+      padding: 10px 11px;
+      color: var(--ink);
+      background: #fff;
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+    .tab {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfc;
+      color: var(--ink);
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .tab.active {
+      border-color: var(--green);
+      color: var(--green-dark);
+      background: #eaf5f0;
+    }
+    .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fbfdfc;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .check input { width: auto; min-height: auto; }
+    .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+    .btn {
+      min-height: 46px;
+      border: 0;
+      border-radius: 6px;
+      padding: 11px 14px;
+      cursor: pointer;
+      font-weight: 900;
+    }
+    .primary { flex: 1; background: var(--green); color: #fff; }
+    .primary:hover { background: var(--green-dark); }
+    .secondary { background: #e8f0ed; color: var(--ink); }
+
+    .empty {
+      min-height: 560px;
+      border: 1px dashed #c4d4d0;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      padding: 34px;
+    }
+    .facility {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+    .facility-card, .card, .metric, .rx-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+    }
+    .facility-card b { display: block; margin-bottom: 6px; color: #27423f; }
+    .facility-card span { display: block; color: var(--muted); font-size: 13px; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .metric b { display: block; font-size: 24px; line-height: 1.1; margin-bottom: 5px; }
+    .metric span, .small { color: var(--muted); font-size: 13px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #e8f5ef;
+      color: var(--green-dark);
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .badge.warn { background: #fff2dc; color: #86520f; }
+    .badge.stop { background: #fde8e8; color: #8b3030; }
+    .notice {
+      margin: 12px 0;
+      padding: 12px 14px;
+      border-left: 4px solid var(--blue);
+      border-radius: 6px;
+      background: #eef7fc;
+      color: #244a62;
+    }
+    .notice.stop {
+      border-left-color: var(--red);
+      background: #fff0f0;
+      color: #753232;
+    }
+    .rx-head {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .rx-head h3 { margin: 0; }
+    .rx-list { display: grid; gap: 12px; margin-top: 14px; }
+    .session-section {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfc;
+      padding: 14px;
+    }
+    .session-section > h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .section-mark {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--green);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+    .check-panel {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .check-panel div {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      padding: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .rx-card { border-left: 5px solid var(--green); }
+    .rx-card.warm { border-left-color: var(--blue); }
+    .rx-card.caution { border-left-color: var(--amber); }
+    .rx-card.stop { border-left-color: var(--red); }
+    .rx-meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .rx-meta div {
+      border-radius: 6px;
+      background: #f3f8f6;
+      padding: 8px;
+      min-height: 54px;
+    }
+    .rx-meta b { display: block; font-size: 13px; color: #2b4844; }
+    .rx-meta span { color: var(--muted); font-size: 13px; }
+    .why {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .why div {
+      border-radius: 6px;
+      background: #fbfdfc;
+      border: 1px solid var(--line);
+      padding: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: .95fr 1.05fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .list { margin: 8px 0 0; padding-left: 20px; color: var(--muted); }
+    .history-list { display: grid; gap: 8px; max-height: 240px; overflow: auto; }
+    .history-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      background: #fbfdfc;
+    }
+    .history-item:hover { border-color: var(--green); }
+    .links { display: grid; gap: 7px; margin-top: 14px; }
+    .links a { color: var(--blue); font-size: 13px; font-weight: 800; text-decoration: none; }
+
+    @media (max-width: 1020px) {
+      .wrap, .two-col { grid-template-columns: 1fr; }
+      .form-panel { position: static; max-height: none; }
+      .facility, .summary-grid, .rx-meta { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .facility, .summary-grid, .rx-meta, .grid-2, .checks, .tabs, .why, .check-panel { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>楚园运动康复处方生成器</h1>
+      <p>依据肩颈、腰部、膝盖评估数据，匹配泰康之家楚园健身房设备，生成动作、次数、组数、频率、降级与进阶规则。</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel form-panel" aria-label="评估录入">
+      <h2>评估录入</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label for="name">长辈称呼</label>
+          <input id="name" value="王阿姨">
+        </div>
+        <div class="field">
+          <label for="age">年龄</label>
+          <input id="age" type="number" min="50" max="100" value="68">
+        </div>
+      </div>
+
+      <label>主要方向</label>
+      <div class="tabs" role="tablist">
+        <button class="tab active" type="button" data-region="neck">肩颈</button>
+        <button class="tab" type="button" data-region="back">腰部</button>
+        <button class="tab" type="button" data-region="knee">膝盖</button>
+      </div>
+
+      <div class="field">
+        <label for="goal">本周功能目标</label>
+        <select id="goal"></select>
+      </div>
+
+      <h3 class="section-title">一、安全筛查</h3>
+      <div class="checks">
+        <label class="check"><input type="checkbox" value="chest"> 胸闷心悸</label>
+        <label class="check"><input type="checkbox" value="dizzy"> 头晕晕厥</label>
+        <label class="check"><input type="checkbox" value="surgery"> 近期手术/骨折</label>
+        <label class="check"><input type="checkbox" value="neuro"> 新发麻木无力</label>
+        <label class="check"><input type="checkbox" value="uncontrolled"> 血压血糖未控</label>
+        <label class="check"><input type="checkbox" value="nightPain"> 夜间痛明显</label>
+      </div>
+
+      <h3 class="section-title">二、疼痛与耐受</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="painRest">静息痛 0-10</label>
+          <input id="painRest" type="number" min="0" max="10" value="2">
+        </div>
+        <div class="field">
+          <label for="painMove">活动痛 0-10</label>
+          <input id="painMove" type="number" min="0" max="10" value="5">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="irritability">训练后反应</label>
+          <select id="irritability">
+            <option value="low">很快缓解</option>
+            <option value="mid" selected>数小时缓解</option>
+            <option value="high">次日仍加重</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="mode">处方风格</label>
+          <select id="mode">
+            <option value="safe">保守</option>
+            <option value="standard" selected>标准</option>
+            <option value="progressive">进阶</option>
+          </select>
+        </div>
+      </div>
+
+      <h3 class="section-title">三、上次训练反馈</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="trainingWeeks">已连续训练周数</label>
+          <input id="trainingWeeks" type="number" min="0" max="52" value="0">
+        </div>
+        <div class="field">
+          <label for="completion">上次完成度</label>
+          <select id="completion">
+            <option value="first" selected>首次评估/无记录</option>
+            <option value="low">低于60%</option>
+            <option value="mid">60%-85%</option>
+            <option value="high">85%以上</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="lastPainResponse">上次疼痛反应</label>
+          <select id="lastPainResponse">
+            <option value="none" selected>无记录/无加重</option>
+            <option value="mild">轻微酸痛，24小时内缓解</option>
+            <option value="worse">疼痛加重超过24小时</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="difficulty">上次动作难度</label>
+          <select id="difficulty">
+            <option value="easy">偏轻松</option>
+            <option value="ok" selected>合适</option>
+            <option value="hard">明显吃力/代偿多</option>
+          </select>
+        </div>
+      </div>
+
+      <h3 class="section-title">四、通用功能数据</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="tug">TUG 起立行走（秒）</label>
+          <input id="tug" type="number" min="0" step="0.1" value="12.8">
+        </div>
+        <div class="field">
+          <label for="chair">30秒坐站（次）</label>
+          <input id="chair" type="number" min="0" value="9">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="balance">平衡能力</label>
+          <select id="balance">
+            <option value="1">并脚站</option>
+            <option value="2">半串联站</option>
+            <option value="3" selected>串联站</option>
+            <option value="4">单脚站</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="falls">12个月跌倒次数</label>
+          <input id="falls" type="number" min="0" value="0">
+        </div>
+      </div>
+
+      <h3 class="section-title">五、专项客观数据</h3>
+      <div id="regionFields"></div>
+
+      <h3 class="section-title">六、专项检查</h3>
+      <div id="specialChecks" class="checks"></div>
+
+      <div class="field">
+        <label for="notes">备注</label>
+        <textarea id="notes" placeholder="例如：右侧更明显，上次坐站后膝痛加重，家属可陪练"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button id="generate" class="btn primary" type="button">生成运动处方</button>
+        <button id="save" class="btn secondary" type="button">保存记录</button>
+      </div>
+      <p class="small">处方用于运动指导场景；红旗症状、明显神经症状或急性加重应先转介。</p>
+    </section>
+
+    <section class="panel output-panel" aria-live="polite">
+      <div id="output" class="empty">
+        <div>
+          <h2>生成楚园场地匹配方案</h2>
+          <p>填写评估后，会输出具体动作、设备、次数、组数、频率、强度、降级与进阶规则。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const facility = {
+      small: "弹力带、哑铃、壶铃、瑜伽垫、泡沫轴、平衡垫、瑞士球",
+      space: "镜子、步行通道、治疗床",
+      cardio: "跑步机、椭圆机、功率车",
+      machines: "坐姿腿屈伸、高位下拉、坐姿划船、腿部内收外展、推胸、推肩"
+    };
+
+    const regions = {
+      neck: {
+        label: "肩颈",
+        goals: ["抬头转头更轻松", "梳头穿衣更顺畅", "减少久坐后的酸胀", "改善圆肩和肩胛控制"],
+        fields: [
+          ["neckRotate", "颈旋转角度（度）", 55],
+          ["shoulderFlex", "肩前屈角度（度）", 135],
+          ["shoulderAbd", "肩外展角度（度）", 120],
+          ["erStrength", "肩外旋肌力 0-5", 4]
+        ],
+        checks: [
+          ["armNumb", "手臂麻木/放射痛"],
+          ["hawkins", "Hawkins 疼痛"],
+          ["neer", "Neer 疼痛"],
+          ["apley", "Apley 摸背受限"]
+        ],
+        contraindications: ["快速甩头", "暴力牵拉颈部", "疼痛范围内反复举高手臂"],
+        rx: {
+          pain: [
+            ["下巴回收", "镜子/椅子", "8次", "2组", "每周5天", "保持2秒", "改善颈深屈肌控制", "若头晕改为仰卧小幅度", "无头晕后增加到10次"],
+            ["胸椎伸展", "泡沫轴/椅背", "8次", "2组", "每周4天", "小幅慢速", "降低圆肩和颈肩负荷", "改坐姿抱胸伸展", "可延长到10次"],
+            ["肩胛后缩", "镜子", "10次", "2组", "每周4天", "不耸肩", "重建肩胛位置感", "减少到1组", "加入弹力带划船"]
+          ],
+          mobility: [
+            ["墙面爬手", "镜子/墙面", "6-8次/侧", "2组", "每周4天", "疼痛≤4/10", "恢复肩前屈活动度", "降低爬手高度", "每周增加少量高度"],
+            ["弹力带外旋", "弹力带", "8-10次/侧", "2组", "每周3天", "轻阻力", "激活肩袖外旋肌", "改无阻力外旋", "增加到3组"],
+            ["坐姿划船", "坐姿划船器械", "10-12次", "2组", "每周2-3天", "轻阻力", "增强背部与肩胛稳定", "改弹力带划船", "阻力增加5%-10%"]
+          ],
+          strength: [
+            ["高位下拉", "高位下拉", "10次", "2组", "每周2天", "轻阻力", "改善肩胛下沉控制", "改坐姿划船", "增加到12次"],
+            ["推胸轻阻力", "推胸机", "8-10次", "2组", "每周2天", "不耸肩", "恢复上肢推力", "改墙面推", "增加到3组"],
+            ["推肩半程", "推肩机", "8次", "1-2组", "每周2天", "只到无痛范围", "恢复举高手臂能力", "改墙面爬手", "扩大活动范围"]
+          ]
+        }
+      },
+      back: {
+        label: "腰部",
+        goals: ["起床翻身更轻松", "久坐后站起更舒服", "弯腰拿物更安全", "步行时腰部更稳定"],
+        fields: [
+          ["fingerFloor", "前屈指地距离（cm）", 26],
+          ["lumbarExt", "腰后伸角度（度）", 12],
+          ["hipFlex", "髋屈曲角度（度）", 95],
+          ["bridgeHold", "臀桥保持（秒）", 18]
+        ],
+        checks: [
+          ["legPain", "腿痛/麻木放射"],
+          ["slr", "直腿抬高诱发"],
+          ["slump", "Slump 诱发"],
+          ["bowel", "大小便异常"]
+        ],
+        contraindications: ["仰卧起坐", "负重旋转", "疼痛明显时反复弯腰"],
+        rx: {
+          pain: [
+            ["腹式呼吸与腹压", "治疗床/瑜伽垫", "6-8次", "2组", "每周5天", "呼气轻收腹", "降低腰部保护性紧张", "改坐姿呼吸", "增加到10次"],
+            ["骨盆前后倾", "治疗床/瑜伽垫", "10次", "2组", "每周5天", "小幅无痛", "恢复腰盆控制", "减少幅度", "加入死虫简化"],
+            ["功率车低阻力", "功率车", "6-10分钟", "1组", "每周3天", "RPE 3/10", "低冲击有氧活动", "缩短到5分钟", "增加2分钟"]
+          ],
+          mobility: [
+            ["臀桥简化", "瑜伽垫", "6-10次", "2组", "每周3-4天", "顶端停1秒", "激活臀大肌减轻腰代偿", "改臀肌等长夹紧", "增加到3组"],
+            ["瑞士球靠墙微蹲", "瑞士球/墙面", "8次", "2组", "每周3天", "浅幅度", "训练髋膝协同", "改坐站训练", "增加到10次"],
+            ["坐姿划船", "坐姿划船器械", "10-12次", "2组", "每周2-3天", "轻阻力", "增强躯干稳定和背部耐力", "改弹力带划船", "阻力增加5%-10%"]
+          ],
+          strength: [
+            ["哑铃农夫行走", "哑铃/步行通道", "20-30米", "2轮", "每周2天", "轻重量", "训练躯干抗侧屈和步行稳定", "改空手行走", "增加距离或重量"],
+            ["壶铃髋铰链教学", "壶铃/镜子", "6-8次", "2组", "每周2天", "先空手再轻重量", "学习安全弯腰模式", "只做徒手髋铰链", "增加到10次"],
+            ["椭圆机低阻力", "椭圆机", "8-12分钟", "1组", "每周2-3天", "RPE 3-4/10", "提升有氧耐受", "改功率车", "增加2分钟"]
+          ]
+        }
+      },
+      knee: {
+        label: "膝盖",
+        goals: ["上下楼更稳", "蹲起疼痛减少", "走路更久不酸痛", "减少打软腿和膝内扣"],
+        fields: [
+          ["kneeFlex", "膝屈曲角度（度）", 105],
+          ["kneeExtLoss", "伸直缺失（度）", 6],
+          ["ankleDf", "踝背屈角度（度）", 10],
+          ["quadStrength", "股四头肌力 0-5", 4]
+        ],
+        checks: [
+          ["swollen", "肿胀/发热"],
+          ["locking", "卡住/绞锁"],
+          ["givingWay", "打软腿"],
+          ["valgus", "下蹲膝内扣"]
+        ],
+        contraindications: ["深蹲", "跳跃", "疼痛范围内反复上下台阶"],
+        rx: {
+          pain: [
+            ["股四头肌等长", "治疗床/瑜伽垫", "8-10次", "2组", "每周5天", "保持5秒", "改善膝伸直控制", "保持3秒或减少到1组", "保持8秒"],
+            ["坐姿伸膝", "椅子/治疗床", "8-10次/侧", "2组", "每周4天", "慢抬慢放", "低负荷活动膝关节", "减少活动范围", "增加踝部轻阻力"],
+            ["功率车低阻力", "功率车", "6-10分钟", "1组", "每周3天", "无痛范围", "促进膝活动和循环", "缩短到5分钟", "增加2分钟"]
+          ],
+          mobility: [
+            ["坐姿腿屈伸", "坐姿腿屈伸器械", "10-12次", "2组", "每周2-3天", "极轻阻力", "增强股四头肌并控制伸膝", "改坐姿伸膝", "阻力增加5%-10%"],
+            ["腿部外展", "腿部内收外展器械", "10-12次", "2组", "每周2-3天", "轻阻力", "改善臀中肌控制和膝内扣", "改弹力带髋外展", "增加到3组"],
+            ["坐站训练", "椅子/镜子", "6-10次", "2组", "每周3天", "膝盖朝脚尖", "提升起立能力", "升高椅子或扶手", "降低椅面高度"]
+          ],
+          strength: [
+            ["平衡垫站立", "平衡垫/镜子", "20秒", "3组", "每周3天", "可扶持", "提高本体感觉和稳定性", "改地面站立", "减少扶持"],
+            ["跑步机慢走", "跑步机", "8-12分钟", "1组", "每周3天", "平坡慢速", "提高步行耐受", "改步行通道或功率车", "增加2分钟"],
+            ["壶铃坐站", "壶铃/椅子", "6-8次", "2组", "每周2天", "轻重量", "强化下肢功能力量", "改徒手坐站", "增加到10次"]
+          ]
+        }
+      }
+    };
+
+    const redFlags = ["chest", "dizzy", "surgery", "neuro", "uncontrolled", "nightPain", "bowel"];
+    let activeRegion = "neck";
+    let lastPlan = null;
+
+    const goal = document.querySelector("#goal");
+    const regionFields = document.querySelector("#regionFields");
+    const specialChecks = document.querySelector("#specialChecks");
+    const output = document.querySelector("#output");
+
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeRegion = btn.dataset.region;
+        document.querySelectorAll(".tab").forEach(item => item.classList.remove("active"));
+        btn.classList.add("active");
+        renderRegion();
+      });
+    });
+
+    document.querySelector("#generate").addEventListener("click", () => {
+      const form = collectForm();
+      lastPlan = buildPlan(form);
+      renderPlan(form, lastPlan);
+    });
+
+    document.querySelector("#save").addEventListener("click", () => {
+      const form = collectForm();
+      const plan = lastPlan || buildPlan(form);
+      saveRecord(form, plan);
+      renderPlan(form, plan);
+    });
+
+    function renderRegion() {
+      const r = regions[activeRegion];
+      goal.innerHTML = r.goals.map(item => `<option>${item}</option>`).join("");
+      regionFields.innerHTML = `<div class="grid-2">${r.fields.map(([id, label, value]) => `
+        <div class="field"><label for="${id}">${label}</label><input id="${id}" type="number" step="0.1" value="${value}"></div>
+      `).join("")}</div>`;
+      specialChecks.innerHTML = r.checks.map(([id, label]) => `<label class="check"><input type="checkbox" value="${id}"> ${label}</label>`).join("");
+    }
+
+    function collectForm() {
+      const r = regions[activeRegion];
+      const values = {};
+      r.fields.forEach(([id]) => values[id] = Number(document.querySelector(`#${id}`).value || 0));
+      return {
+        date: new Date().toLocaleString("zh-CN"),
+        name: document.querySelector("#name").value.trim() || "长辈",
+        age: Number(document.querySelector("#age").value || 65),
+        region: activeRegion,
+        regionData: r,
+        goal: goal.value,
+        painRest: Number(document.querySelector("#painRest").value || 0),
+        painMove: Number(document.querySelector("#painMove").value || 0),
+        irritability: document.querySelector("#irritability").value,
+        mode: document.querySelector("#mode").value,
+        trainingWeeks: Number(document.querySelector("#trainingWeeks").value || 0),
+        completion: document.querySelector("#completion").value,
+        lastPainResponse: document.querySelector("#lastPainResponse").value,
+        difficulty: document.querySelector("#difficulty").value,
+        tug: Number(document.querySelector("#tug").value || 0),
+        chair: Number(document.querySelector("#chair").value || 0),
+        balance: Number(document.querySelector("#balance").value || 0),
+        falls: Number(document.querySelector("#falls").value || 0),
+        notes: document.querySelector("#notes").value.trim(),
+        checks: Array.from(document.querySelectorAll("input[type='checkbox']:checked")).map(item => item.value),
+        values
+      };
+    }
+
+    function buildPlan(form) {
+      const flags = {
+        red: form.checks.some(item => redFlags.includes(item)),
+        highPain: form.painMove >= 7 || form.irritability === "high",
+        mediumPain: form.painMove >= 4,
+        fallRisk: form.tug >= 12 || form.balance < 3 || form.falls > 0,
+        lowStrength: form.chair > 0 && form.chair < 10,
+        special: form.regionData.checks.filter(([id]) => form.checks.includes(id)).length,
+        regress: form.lastPainResponse === "worse" || form.difficulty === "hard" || form.completion === "low",
+        progress: form.trainingWeeks >= 2 && form.completion === "high" && form.lastPainResponse !== "worse" && form.difficulty !== "hard" && form.painMove <= 4
+      };
+      const stage = getStage(form, flags);
+      const selected = selectExercises(form, stage, flags);
+      const riskScore = Math.min(100, (flags.red ? 45 : 0) + (flags.highPain ? 20 : 0) + (flags.fallRisk ? 15 : 0) + (flags.lowStrength ? 10 : 0) + flags.special * 5);
+      return {
+        stage,
+        flags,
+        riskScore,
+        level: flags.red ? "转介优先" : riskScore >= 45 ? "谨慎监督" : riskScore >= 25 ? "低强度起步" : "可稳步进阶",
+        frequency: flags.red ? "暂不安排强度训练" : stage === "pain" ? "每周4-5天，每次12-18分钟" : stage === "mobility" ? "每周3-4天，每次18-25分钟" : "每周3天，每次25-35分钟",
+        intensity: flags.red ? "仅记录与转介" : flags.highPain ? "RPE 2-3/10，疼痛≤3/10" : flags.mediumPain ? "RPE 3-4/10，疼痛≤4/10" : "RPE 4-5/10，能完整说话",
+        selected,
+        session: buildSession(form, flags, stage, selected),
+        reasons: buildReasons(form, flags, stage),
+        progression: buildProgression(form, flags, stage)
+      };
+    }
+
+    function getStage(form, flags) {
+      if (flags.red) return "refer";
+      if (flags.highPain) return "pain";
+      if (activeRegion === "knee" && (form.values.kneeFlex < 110 || form.values.kneeExtLoss > 5)) return "mobility";
+      if (activeRegion === "neck" && (form.values.shoulderFlex < 140 || form.values.shoulderAbd < 130)) return "mobility";
+      if (activeRegion === "back" && (form.values.fingerFloor > 20 || form.values.hipFlex < 100)) return "mobility";
+      if (flags.lowStrength || flags.fallRisk || form.mode === "safe") return "mobility";
+      return "strength";
+    }
+
+    function selectExercises(form, stage, flags) {
+      if (stage === "refer") {
+        return [
+          ["记录与转介沟通", "评估表/既往记录", "-", "-", "立即", "不做强度训练", "出现红旗信息时保护安全", "等待专业确认", "确认后重新评估"]
+        ];
+      }
+      const pool = form.regionData.rx[stage === "pain" ? "pain" : stage === "mobility" ? "mobility" : "strength"];
+      let list = pool.slice(0, form.mode === "progressive" && !flags.highPain && !flags.regress ? 5 : 4);
+      return list.map(ex => tuneExercise(ex, form, flags));
+    }
+
+    function tuneExercise(ex, form, flags) {
+      const copy = [...ex];
+      if (form.mode === "safe" || flags.fallRisk || flags.regress) {
+        copy[3] = copy[3].replace("3组", "2组").replace("2组", "1-2组");
+        copy[5] = `${copy[5]}，可扶持/有人在旁`;
+      }
+      if (flags.regress) {
+        copy[2] = reduceDose(copy[2]);
+        copy[7] = `${copy[7]}；本周先减少总量30%`;
+        copy[8] = "连续2次无加重后恢复原处方";
+      } else if ((flags.progress || form.mode === "progressive") && !flags.highPain && !flags.fallRisk) {
+        copy[3] = copy[3].replace("1-2组", "2组").replace("2组", "2-3组");
+        copy[8] = `${copy[8]}；本周可小幅增加5%-10%阻力或1组`;
+      }
+      return copy;
+    }
+
+    function reduceDose(text) {
+      return text
+        .replace("10-12", "8-10")
+        .replace("8-12", "6-8")
+        .replace("8-10", "6-8")
+        .replace("6-10", "5-8")
+        .replace("20-30", "10-20")
+        .replace("8-12分钟", "5-8分钟")
+        .replace("6-10分钟", "5-6分钟");
+    }
+
+    function buildReasons(form, flags, stage) {
+      const reasons = [];
+      if (flags.red) reasons.push("存在红旗筛查项，方案优先转介，不做进阶训练。");
+      if (flags.highPain) reasons.push("活动痛高或次日加重，优先低负荷、等长或活动度训练。");
+      if (flags.fallRisk) reasons.push("TUG、平衡或跌倒史提示风险，站立动作采用扶持和监督。");
+      if (flags.lowStrength) reasons.push("30秒坐站低于10次，下肢基础力量需要重建。");
+      if (activeRegion === "knee" && form.values.kneeExtLoss > 5) reasons.push("膝伸直缺失超过5度，优先股四头肌激活和伸膝控制。");
+      if (activeRegion === "knee" && form.values.kneeFlex < 110) reasons.push("膝屈曲角度受限，暂不安排深蹲和高阶台阶。");
+      if (activeRegion === "back" && form.values.fingerFloor > 20) reasons.push("前屈受限，优先腰盆控制和髋部活动度。");
+      if (activeRegion === "neck" && form.values.shoulderFlex < 140) reasons.push("肩前屈受限，优先墙面爬手、肩胛控制和低阻力肩袖激活。");
+      if (flags.regress) reasons.push("上次训练完成度低、疼痛加重或代偿明显，本周自动降级总量与难度。");
+      if (flags.progress) reasons.push("已连续训练至少2周且完成度高、疼痛未加重，本周允许小幅进阶。");
+      reasons.push(`当前阶段：${stageName(stage)}。设备选择限定在楚园健身房现有条件内。`);
+      return reasons;
+    }
+
+    function buildProgression(form, flags, stage) {
+      if (flags.red) {
+        return {
+          title: "转介后再进阶",
+          current: "本周不做强度训练，以记录、沟通和专业确认为主。",
+          next: "红旗解除并重新评估后，从疼痛控制期重新开始。",
+          criteria: ["医生/康复专业人员确认可运动", "静息痛和活动痛稳定", "无头晕胸闷等异常反应"]
+        };
+      }
+      if (flags.regress || flags.highPain) {
+        return {
+          title: "本周降级",
+          current: "减少总量约30%，优先无痛活动度、等长收缩和低阻力有氧。",
+          next: "连续2次训练后24小时不加重，再恢复标准处方。",
+          criteria: ["训练中疼痛≤3/10", "24小时内无加重", "动作无明显代偿"]
+        };
+      }
+      if (flags.progress || stage === "strength") {
+        return {
+          title: "小幅进阶",
+          current: "在动作质量稳定的前提下，增加1组或增加5%-10%阻力，不同时增加多个变量。",
+          next: "下周优先增加功能动作或有氧时长，再考虑增加负重。",
+          criteria: ["完成度≥85%", "疼痛≤4/10且24小时不加重", "TUG/坐站/ROM至少一项稳定或改善"]
+        };
+      }
+      return {
+        title: "维持巩固",
+        current: "保持本周剂量，重点提高动作质量和疼痛稳定性。",
+        next: "连续2周完成度高且无加重后，进入小幅进阶。",
+        criteria: ["完成度≥85%", "动作质量稳定", "无新增红旗或专项阳性表现"]
+      };
+    }
+
+    function buildSession(form, flags, stage, selected) {
+      if (stage === "refer") {
+        return {
+          precheck: precheckItems(form, flags),
+          warmup: [],
+          activation: [],
+          main: selected,
+          stretch: [],
+          post: postClassItems(true)
+        };
+      }
+      return {
+        precheck: precheckItems(form, flags),
+        warmup: warmupItems(form, flags).map(ex => tuneExercise(ex, form, flags)),
+        activation: activationItems(form, flags).map(ex => tuneExercise(ex, form, flags)),
+        main: selected,
+        stretch: stretchItems(form, flags).map(ex => tuneExercise(ex, form, flags)),
+        post: postClassItems(false)
+      };
+    }
+
+    function precheckItems(form, flags) {
+      const items = [
+        `今日静息痛 ${form.painRest}/10、活动痛 ${form.painMove}/10，确认是否较上次明显升高。`,
+        "询问头晕、胸闷、心悸、异常气短、夜间痛或新发麻木无力。",
+        `复核上次反馈：完成度 ${completionText(form.completion)}，疼痛反应 ${painResponseText(form.lastPainResponse)}，动作难度 ${difficultyText(form.difficulty)}。`,
+        `今日训练等级：${flags.red ? "暂停强度训练并转介确认" : flags.regress || flags.highPain ? "降级执行" : flags.progress ? "允许小幅进阶" : "维持标准执行"}。`
+      ];
+      if (flags.fallRisk) items.push("TUG、平衡或跌倒史提示风险，站立动作需要扶持、镜子反馈或近距离保护。");
+      return items;
+    }
+
+    function warmupItems(form, flags) {
+      if (activeRegion === "neck") {
+        return [
+          ["步行通道轻松步行", "步行通道", "指导师控制时间", "1组", "每次训练", "RPE 2-3/10", "提升体温和整体循环", "改坐姿摆臂", "延长步行时间"],
+          ["肩颈关节活动", "镜子", "6-8次/方向", "1-2组", "每次训练", "小幅慢速", "为肩颈激活做准备", "减少活动范围", "增加到10次"]
+        ];
+      }
+      if (activeRegion === "back") {
+        return [
+          ["功率车低阻力", "功率车", "指导师控制时间", "1组", "每次训练", "RPE 2-3/10", "低冲击提高体温", "改步行通道慢走", "延长有氧时间"],
+          ["骨盆前后倾热身", "瑜伽垫/治疗床", "8-10次", "1-2组", "每次训练", "小幅无痛", "唤醒腰盆活动", "改坐姿骨盆活动", "增加到2组"]
+        ];
+      }
+      return [
+        ["功率车低阻力", "功率车", "指导师控制时间", "1组", "每次训练", "RPE 2-3/10", "促进膝关节循环和活动度", "改坐姿踝泵", "延长有氧时间"],
+        ["踝泵与坐姿伸膝热身", "椅子/治疗床", "10-15次", "1组", "每次训练", "无痛范围", "润滑踝膝关节", "减少次数", "增加到2组"]
+      ];
+    }
+
+    function activationItems(form, flags) {
+      if (activeRegion === "neck") {
+        return [
+          ["下巴回收", "镜子/椅子", "8-10次", "2组", "每次训练", "保持2秒", "激活颈深屈肌", "改仰卧小幅度", "增加保持时间"],
+          ["弹力带外旋", "弹力带", "8-10次/侧", "2组", "每次训练", "轻阻力", "激活肩袖外旋肌", "改无阻力外旋", "增加到3组"]
+        ];
+      }
+      if (activeRegion === "back") {
+        return [
+          ["腹式呼吸与腹压", "治疗床/瑜伽垫", "6-8次", "2组", "每次训练", "呼气轻收腹", "建立核心控制", "改坐姿呼吸", "增加到10次"],
+          ["臀桥简化", "瑜伽垫", "6-10次", "2组", "每次训练", "顶端停1秒", "激活臀大肌", "改臀肌等长夹紧", "增加到3组"]
+        ];
+      }
+      return [
+        ["股四头肌等长", "治疗床/瑜伽垫", "8-10次", "2组", "每次训练", "保持5秒", "激活膝伸直控制", "保持3秒", "保持8秒"],
+        ["弹力带髋外展", "弹力带", "8-10次/侧", "2组", "每次训练", "轻阻力", "激活臀中肌并控制膝内扣", "改无阻力侧抬腿", "增加到3组"]
+      ];
+    }
+
+    function stretchItems(form, flags) {
+      if (activeRegion === "neck") {
+        return [
+          ["胸大肌轻柔拉伸", "墙面/镜子", "20-30秒", "1-2组", "每次训练", "轻拉伸感", "降低圆肩张力", "减少角度", "延长到30秒"],
+          ["泡沫轴胸椎放松", "泡沫轴/瑜伽垫", "4-6次", "1组", "每次训练", "缓慢呼吸", "放松胸椎和上背部", "改坐姿胸椎伸展", "增加到8次"]
+        ];
+      }
+      if (activeRegion === "back") {
+        return [
+          ["髋屈肌拉伸", "瑜伽垫/治疗床", "20-30秒/侧", "1-2组", "每次训练", "不压腰", "降低腰盆前侧张力", "缩短保持时间", "延长到30秒"],
+          ["呼吸放松", "治疗床/瑜伽垫", "6-8次呼吸", "1组", "每次训练", "慢呼气", "降低训练后紧张", "改坐姿呼吸", "增加到10次"]
+        ];
+      }
+      return [
+        ["小腿后侧拉伸", "墙面/瑜伽垫", "20-30秒/侧", "1-2组", "每次训练", "轻拉伸感", "改善踝背屈和步态", "缩短保持时间", "延长到30秒"],
+        ["股四头肌轻柔拉伸", "治疗床/瑜伽垫", "20秒/侧", "1-2组", "每次训练", "不压痛", "缓解大腿前侧紧张", "改俯卧小幅屈膝", "延长到30秒"]
+      ];
+    }
+
+    function postClassItems(referOnly) {
+      if (referOnly) {
+        return ["记录红旗表现和触发项目。", "整理评估数据，建议转介专业人员确认。", "待确认后重新评估并生成训练课。"];
+      }
+      return [
+        "记录课后疼痛、疲劳、头晕胸闷等不适。",
+        "记录完成度、动作代偿、需要指导师辅助的动作。",
+        "24小时后追踪疼痛反应，作为下次维持、降级或进阶依据。",
+        "保存本次方案和反馈，便于下次查询历史记录。"
+      ];
+    }
+
+    function renderPlan(form, plan) {
+      const badgeClass = plan.flags.red ? "stop" : plan.riskScore >= 45 ? "warn" : "";
+      output.className = "";
+      output.innerHTML = `
+        <h2>${form.name}的${form.regionData.label}运动处方</h2>
+        <span class="badge ${badgeClass}">${plan.level}</span>
+        <div class="facility">
+          <div class="facility-card"><b>小工具</b><span>${facility.small}</span></div>
+          <div class="facility-card"><b>空间</b><span>${facility.space}</span></div>
+          <div class="facility-card"><b>有氧</b><span>${facility.cardio}</span></div>
+          <div class="facility-card"><b>力量器械</b><span>${facility.machines}</span></div>
+        </div>
+        <div class="summary-grid">
+          <div class="metric"><b>${stageName(plan.stage)}</b><span>方案阶段</span></div>
+          <div class="metric"><b>${plan.frequency}</b><span>本周频率</span></div>
+          <div class="metric"><b>${plan.intensity}</b><span>强度规则</span></div>
+          <div class="metric"><b>${plan.riskScore}</b><span>风险评分</span></div>
+        </div>
+        ${plan.flags.red ? `<div class="notice stop">检测到红旗信息。请先转介医生、物理治疗师或康复医师确认，当前仅保留记录与沟通建议。</div>` : `<div class="notice">疼痛规则：训练中疼痛不超过4/10，训练后24小时不加重；若加重则按每个动作的降级规则执行。</div>`}
+
+        <div class="two-col">
+          <div class="card">
+            <h3>生成依据</h3>
+            <ul class="list">${plan.reasons.map(item => `<li>${item}</li>`).join("")}</ul>
+            <h3 style="margin-top:16px">禁忌动作</h3>
+            <ul class="list">${form.regionData.contraindications.map(item => `<li>${item}</li>`).join("")}</ul>
+          </div>
+          <div class="card">
+            <h3>历史记录查询</h3>
+            <div class="history-list">${renderHistory()}</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3>${plan.progression.title}</h3>
+          <div class="why">
+            <div><b>本周调整</b><br>${plan.progression.current}</div>
+            <div><b>下次生成逻辑</b><br>${plan.progression.next}</div>
+          </div>
+          <ul class="list">${plan.progression.criteria.map(item => `<li>${item}</li>`).join("")}</ul>
+        </div>
+
+        ${renderClassSection("一", "课前检查", plan.session.precheck, "check")}
+        ${renderClassSection("二", "热身", plan.session.warmup, "exercise", "warm")}
+        ${renderClassSection("三", "激活", plan.session.activation, "exercise", "caution")}
+        ${renderClassSection("四", "正式训练", plan.session.main, "exercise", plan.stage === "refer" ? "stop" : plan.stage === "pain" ? "caution" : "")}
+        ${renderClassSection("五", "拉伸放松", plan.session.stretch, "exercise", "warm")}
+        ${renderClassSection("六", "课后记录与下次调整", plan.session.post, "check")}
+
+        <div class="links">
+          <a href="https://www.cdc.gov/physical-activity-basics/guidelines/older-adults.html" target="_blank">CDC：老年人有氧、力量和平衡活动建议</a>
+          <a href="https://www.cdc.gov/steadi/hcp/clinical-resources/index.html" target="_blank">CDC STEADI：TUG、30秒坐站、四阶段平衡</a>
+          <a href="https://www.merckmanuals.com/professional/neurologic-disorders/neurologic-examination/how-to-assess-muscle-strength" target="_blank">Merck Manual：肌力0-5分级</a>
+        </div>
+      `;
+      bindHistory();
+    }
+
+    function renderClassSection(mark, title, items, type, cls) {
+      if (!items.length) return "";
+      if (type === "check") {
+        return `
+          <section class="session-section">
+            <h3><span class="section-mark">${mark}</span>${title}</h3>
+            <div class="check-panel">${items.map(item => `<div>${item}</div>`).join("")}</div>
+          </section>
+        `;
+      }
+      return `
+        <section class="session-section">
+          <h3><span class="section-mark">${mark}</span>${title}</h3>
+          <div class="rx-list">${items.map((ex, index) => renderExercise(ex, index, cls)).join("")}</div>
+        </section>
+      `;
+    }
+
+    function renderExercise(ex, index, style) {
+      const cls = style || "";
+      return `
+        <article class="rx-card ${cls}">
+          <div class="rx-head">
+            <h3>${index + 1}. ${ex[0]}</h3>
+            <span class="badge">${ex[1]}</span>
+          </div>
+          <div class="rx-meta">
+            <div><b>次数/时间</b><span>${ex[2]}</span></div>
+            <div><b>组数</b><span>${ex[3]}</span></div>
+            <div><b>频率</b><span>${ex[4]}</span></div>
+            <div><b>强度/节奏</b><span>${ex[5]}</span></div>
+          </div>
+          <div class="why">
+            <div><b>为什么选</b><br>${ex[6]}</div>
+            <div><b>降级 / 进阶</b><br>降级：${ex[7]}<br>进阶：${ex[8]}</div>
+          </div>
+        </article>
+      `;
+    }
+
+    function saveRecord(form, plan) {
+      const records = getRecords();
+      records.unshift({
+        id: Date.now(),
+        date: form.date,
+        name: form.name,
+        region: form.regionData.label,
+        stage: stageName(plan.stage),
+        pain: form.painMove,
+        goal: form.goal,
+        completion: form.completion,
+        response: form.lastPainResponse,
+        weeks: form.trainingWeeks,
+        progression: plan.progression.title,
+        prescription: [
+          ...plan.session.warmup,
+          ...plan.session.activation,
+          ...plan.session.main,
+          ...plan.session.stretch
+        ].map(item => `${item[0]}：${item[2]} x ${item[3]}，${item[4]}`)
+      });
+      localStorage.setItem("chuyuanRehabRecords", JSON.stringify(records.slice(0, 20)));
+    }
+
+    function getRecords() {
+      try { return JSON.parse(localStorage.getItem("chuyuanRehabRecords") || "[]"); }
+      catch { return []; }
+    }
+
+    function renderHistory() {
+      const records = getRecords();
+      if (!records.length) return `<p class="small">暂无保存记录。生成后点击“保存记录”，之后可在这里查询。</p>`;
+      return records.map(r => `
+        <div class="history-item" data-id="${r.id}">
+          <b>${r.name}｜${r.region}｜${r.stage}</b><br>
+          <span class="small">${r.date}｜活动痛 ${r.pain}/10｜${r.progression || "未记录进阶"}｜${r.goal}</span>
+        </div>
+      `).join("");
+    }
+
+    function bindHistory() {
+      document.querySelectorAll(".history-item").forEach(item => {
+        item.addEventListener("click", () => {
+          const record = getRecords().find(r => String(r.id) === item.dataset.id);
+          if (!record) return;
+          alert(`${record.name} ${record.region}历史处方\\n\\n${record.prescription.join("\\n")}`);
+        });
+      });
+    }
+
+    function completionText(value) {
+      return {
+        first: "首次评估/无记录",
+        low: "低于60%",
+        mid: "60%-85%",
+        high: "85%以上"
+      }[value] || "无记录";
+    }
+
+    function painResponseText(value) {
+      return {
+        none: "无记录/无加重",
+        mild: "轻微酸痛，24小时内缓解",
+        worse: "疼痛加重超过24小时"
+      }[value] || "无记录";
+    }
+
+    function difficultyText(value) {
+      return {
+        easy: "偏轻松",
+        ok: "合适",
+        hard: "明显吃力/代偿多"
+      }[value] || "未记录";
+    }
+
+    function stageName(stage) {
+      return {
+        refer: "转介确认",
+        pain: "疼痛控制期",
+        mobility: "活动度与基础控制期",
+        strength: "力量与功能强化期"
+      }[stage] || stage;
+    }
+
+    renderRegion();
+  </script>
+</body>
+</html>
